@@ -1,0 +1,30 @@
+node {
+    label 'zip-job-docker'
+    stage('Build') {
+        script {
+            sh 'python zip_job.py'
+        }
+    }
+    stage('Publish') {
+        if (currentBuild.currentResult == 'SUCCESS') {
+            withArtifacts([includePatterns: '*.zip']) {
+                def server = Artifactory.server 'artifactory-xx'
+                server.upload spec: "${workspace}/artifactory.json", target: "store-artifacts/${env.VERSION}", username: 'superman',password: 'P@ssw0rd123$'
+                server.publishBuildInfo buildName: env.JOB_NAME, buildNumber: env.BUILD_NUMBER
+            }
+        }
+    }
+    stage('Report') {
+        if (currentBuild.currentResult == 'SUCCESS') {
+            emailext (
+                subject: "Job ${env.JOB_NAME} (${env.BUILD_NUMBER}) status: SUCCESS",
+                to: "requestor@email.com",
+            )
+        }
+    }
+    stage('Cleanup') {
+        script {
+            deleteDir()
+        }
+    }
+}
