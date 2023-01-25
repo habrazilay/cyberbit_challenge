@@ -1,5 +1,8 @@
 node {
     label 'zip-job-docker'
+    def version = "${params.VERSION}"
+    def user = "${params.user}"
+    def password = "${params.password}"
     stage('Build') {
         script {
             sh 'python zip_job.py'
@@ -8,8 +11,8 @@ node {
     stage('Publish') {
         if (currentBuild.currentResult == 'SUCCESS') {
             withArtifacts([includePatterns: '*.zip']) {
-                def server = Artifactory.server 'artifactory-xx'
-                server.upload spec: "${workspace}/artifactory.json", target: "store-artifacts/${env.VERSION}", username: 'superman',password: 'P@ssw0rd123$'
+                def server = Artifactory.server 'https://artifactory-cyberbit'
+                server.upload spec: "${workspace}/artifactory.json", target: "store-artifacts/${version}", username: "${user}",password: "${password}"
                 server.publishBuildInfo buildName: env.JOB_NAME, buildNumber: env.BUILD_NUMBER
             }
         }
