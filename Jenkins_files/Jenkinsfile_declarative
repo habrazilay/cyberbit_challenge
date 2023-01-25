@@ -1,61 +1,33 @@
-pipeline {
-    agent {
-        label 'zip-job-docker'
-        docker {
-            image 'your/docker-image-name'
-            args '-u root:root'
+node {
+    label 'zip-job-docker'
+    def version = "${params.VERSION}"
+    def user = "${params.user}"
+    def password = "${params.password}"
+    stage('Build') {
+        script {
+            sh 'python zip_job.py'
         }
     }
-    stages {
-        stage('Build') {
-            steps {
-                script {
-                    sh 'python zip_job.py'
-                }
+    stage('Publish') {
+        if (currentBuild.currentResult == 'SUCCESS') {
+            withArtifacts([includePatterns: '*.zip']) {
+                def server = Artifactory.server 'https://artifactory-cyberbit'
+                server.upload spec: "${workspace}/artifactory.json", target: "store-artifacts/${version}", username: "${user}",password: "${password}"
+                server.publishBuildInfo buildName: env.JOB_NAME, buildNumber: env.BUILD_NUMBER
             }
         }
-        stage('Publish') {
-            when {
-                success
-            }
-            steps {
-                withArtifacts([includePatterns: '*.zip']) {
-                    artifactoryPublish (
-                        serverId: 'artifactory-xx',
-                        repoKey: "store-artifacts/${env.VERSION}",
-                        user: 'superman',
-                        password: 'P@ssw0rd123$',
-                        useSpecs: true,
-                        specs: [
-                            [file: 'artifactory.json']
-                        ]
-                    )
-                }
-                def buildInfo = Artifactory.newBuildInfo()
-                buildInfo.env.capture = true
-                buildInfo.env.add("VERSION", env.VERSION)
-                buildInfo.env.add("BUILD_NUMBER", env.BUILD_NUMBER)
-                buildInfo.env.add("JOB_NAME", env.JOB_NAME)
-                buildInfo.env.add("BUILD_URL", env.BUILD_URL)
-                buildInfo.env.add("JENKINS_URL", env.JENKINS_URL)
-                Artifactory.publishBuildInfo buildInfo
-            }
+    }
+    stage('Report') {
+        if (currentBuild.currentResult == 'SUCCESS') {
+            emailext (
+                subject: "Job ${env.JOB_NAME} (${env.BUILD_NUMBER}) status: SUCCESS",
+                to: "requestor@email.com",
+            )
         }
-        stage('Report') {
-            when {
-                success
-            }
-            steps {
-                emailext (
-                    subject: "Job ${env.JOB_NAME} (${env.BUILD_NUMBER}) status: SUCCESS",
-                    to: "requestor@email.com",
-                )
-            }
-        }
-        stage('Cleanup') {
-            steps {
-                deleteDir()
-            }
+    }
+    stage('Cleanup') {
+        script {
+            deleteDir()
         }
     }
 }
