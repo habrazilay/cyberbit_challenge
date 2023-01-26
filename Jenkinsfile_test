@@ -1,6 +1,6 @@
 pipeline {
 environment {
-registry = "habrazilay/my-repository"
+registry = "habrazilay/my_ubuntu_image"
 registryCredential = 'dockerhub_id'
 dockerImage = ''
 }
