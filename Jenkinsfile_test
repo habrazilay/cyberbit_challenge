@@ -1,6 +1,11 @@
-script {
-    echo "Start condition check"
-    build job: 'printuser'
-    def slaveJob = build job: 'printuser'
-    println slaveJob.rawBuild.log  
+pipeline {
+    agent { docker { image 'maven:3.3.3' } }
+      stages {
+        stage('log version info') {
+      steps {
+        sh 'mvn --version'
+        sh 'mvn clean install'
+      }
+    }
+  }
 }
