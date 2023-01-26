@@ -1,9 +1,9 @@
 pipeline {
     agent { docker { image 'ubuntu/ubuntu:latest' } }
       stages {
-        stage('log version info') {
-      steps {
-        sh 'python3 zip_job.py'
+        stage('Build') {
+            steps {
+                sh 'python3 zip_job.py'
       }
     }
   }
