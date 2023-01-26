@@ -1,0 +1,21 @@
+pipeline {
+    agent none
+    stages {
+        
+        stage ('Stage-1') {
+            agent { label 'agent-1' }
+            steps {
+                script {
+                }
+            }
+        }
+        
+        stage ('Stage-2') {
+            agent { label 'agent-2' }
+            steps {
+                script {
+                }
+            }
+        }
+    }
+}
